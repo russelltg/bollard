@@ -40,7 +40,7 @@ pub enum GrpcError {
     },
 }
 
-/// Errors related to the Grpc functionality
+/// Errors related to the Grpc Registry authentication functionality
 #[derive(Debug, thiserror::Error)]
 pub enum GrpcAuthError {
     /// Error triggered when the registry responds with a status code less than 200 or more than or
@@ -83,7 +83,7 @@ pub enum GrpcAuthError {
     HyperError {
         /// The source hyper error
         #[from]
-        err: hyper::http::Error,
+        err: http::Error,
     },
     /// Error while deserializing the payload emitted by the registry
     #[error("Serde payload deserializing error during GRPC authentication")]
@@ -97,7 +97,7 @@ pub enum GrpcAuthError {
     InvalidUriError {
         /// The invalid uri error
         #[from]
-        err: hyper::http::uri::InvalidUri,
+        err: http::uri::InvalidUri,
     },
     /// Error that is emitted by the hyper-util legacy bridge client
     #[error("Error in the hyper legacy client: {}", err)]
@@ -105,5 +105,30 @@ pub enum GrpcAuthError {
         /// The original error emitted.
         #[from]
         err: hyper_util::client::legacy::Error,
+    },
+}
+
+/// Errors related to the Grpc SSH forwarding functionality
+#[derive(Debug, thiserror::Error)]
+pub enum GrpcSshError {
+    /// Message validation error during SSH forwarding
+    #[error("Message validation failed: {0}")]
+    InvalidMessage(String),
+    /// Unsupported message type during SSH forwarding
+    #[error("Message type is not supported by this agent: {0}")]
+    InvalidMessageType(u8),
+    /// Generic I/O error during SSH forwarding
+    #[error("I/O failure during SSH forwarding")]
+    IOError {
+        /// The original I/O error
+        #[from]
+        err: std::io::Error,
+    },
+    /// Message decoding failure during SSH forwarding
+    #[error("SSH key decoding failure")]
+    SSHKeyError {
+        /// The original SSH Key error
+        #[from]
+        err: ssh_key::Error,
     },
 }

@@ -6,6 +6,7 @@ use bollard_buildkit_proto::moby::{
         v1::{control_client::ControlClient, CacheOptions, SolveRequest},
     },
     filesync::v1::{auth_server::AuthServer, file_send_server::FileSendServer},
+    sshforward::v1::ssh_server::SshServer,
     upload::v1::upload_server::UploadServer,
 };
 use log::debug;
@@ -154,21 +155,24 @@ pub(crate) async fn solve(
     }
 
     let secret_provider = super::SecretProvider::new(secret_sources);
+    let ssh_provider = super::SshProvider::new();
 
     let auth = AuthServer::new(auth_provider);
     let upload = UploadServer::new(upload_provider);
     let secret = SecretsServer::new(secret_provider);
+    let ssh = SshServer::new(ssh_provider);
 
     let mut services: Vec<GrpcServer> = vec![
-        super::GrpcServer::Auth(auth),
-        super::GrpcServer::Upload(upload),
-        super::GrpcServer::Secrets(secret),
+        GrpcServer::Auth(auth),
+        GrpcServer::Upload(upload),
+        GrpcServer::Secrets(secret),
+        GrpcServer::Ssh(ssh),
     ];
 
     if let Some(path) = path {
         let filesend = FileSendServer::new(super::FileSendImpl::new(path.as_path()));
 
-        services.push(super::GrpcServer::FileSend(filesend));
+        services.push(GrpcServer::FileSend(filesend));
     }
 
     let tear_down_handler = driver.get_tear_down_handler();
